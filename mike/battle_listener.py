@@ -1,10 +1,12 @@
 import logging
 import time
+import os
 import json
 from .embeds import battle_alert
 from dateutil.parser import parse
 import aioredis
 import asyncio
+import discord
 import aioredis
 from .constants import MEESEEKER_SELECTOR_FOR_CUSTOM_JSON
 
@@ -19,6 +21,7 @@ class TxListener:
     def __init__(self, db, bot):
         self.db = db
         self.bot = bot
+        self.battle_log_channel = os.getenv("MIKE_BATTLE_LOG_CHANNEL_ID")
 
     async def listen_ops(self):
         sub = await aioredis.create_redis(
@@ -45,13 +48,20 @@ class TxListener:
         if metadata.get("type") != "fight":
             return
 
+        if self.battle_log_channel:
+            channel = self.bot.running_on.get_channel(
+                self.battle_log_channel)
+            await self.bot.send_message(channel, embed=battle_alert(
+                    metadata,
+                    timestamp,
+                ))
+
         subscriptions = self.db.all_subscriptions()
         for subscription in subscriptions:
             if subscription["player_account"] == metadata["payload"]["target"]:
                 member = self.bot.running_on.get_member(
                     subscription["discord_backend_id"])
                 r = await self.bot.send_message(member, battle_alert(
-                    metadata["author"],
-                    metadata["payload"]["units"],
+                    metadata,
                     timestamp,
                 ))

@@ -1,8 +1,13 @@
 from discord import Embed
 from datetime import datetime
+from dateutil.parser import parse
+
+def get_dw_link(player):
+    return f"[{player}](https://drugwars.io/@{player})"
 
 
 def get_help():
+    """Returns the embed objects of the $help command."""
     embed = Embed(
         color=0x2ecc71,
     )
@@ -22,28 +27,42 @@ def get_help():
     return embed
 
 
-def battle_alert(attacker, units, started_at):
+def battle_alert(metadata, timestamp):
+    """Returns the embed object of the battle notification"""
     army_text = ""
-    for unit in units:
-        army_text += f"x{unit['amount']} {unit['key']}, "
-    army_text = army_text[:-2]
-    army_text += "."
+    for unit in metadata["payload"]["units"]:
+        army_text += f"- {unit['key'].capitalize()} ({unit['amount']})\n "
+
     embed = Embed(
         color=0x2ecc71,
+        title="New Battle!"
     )
     embed.add_field(
-        name="New Battle!",
-        value=f"@{attacker} attacks you with {army_text}."
-    )
-    embed.add_field(
-        name="Started At",
-        value=started_at,
+        name="Attacker",
+        value=get_dw_link(metadata["author"]),
         inline=False,
     )
+    embed.add_field(
+        name="Target",
+        value=get_dw_link(metadata["payload"]["target"]),
+        inline=False,
+    )
+
+    embed.add_field(
+        name="Attacker Army",
+        value=army_text,
+        inline=False,
+    )
+    embed.timestamp = parse(timestamp)
+    embed.set_thumbnail(
+        url=f"https://steemitimages.com/u/{metadata['author']}/avatar")
 
     return embed
 
 def subscription_list_embed(discord_account, subscriptions):
+    """Returns a rich embed includes the subscription list of a particular
+    discord account."""
+
     subscription_list = ""
     for subscription in subscriptions:
         subscription_list += f"- {subscription['player_account']}\n"
