@@ -200,5 +200,5 @@ def get_speed(army):
 
 
 def get_stats(army):
-    return sum([UNITS[u["key"]]["attack"] for u in army]), sum(
-        [UNITS[u["key"]]["defense"] for u in army])
+    return sum([UNITS[u["key"]]["attack"] * u["amount"] for u in army]), sum(
+        [UNITS[u["key"]]["defense"] * u["amount"] for u in army])
