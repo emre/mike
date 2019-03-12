@@ -1,0 +1,1 @@
+MEESEEKER_SELECTOR_FOR_CUSTOM_JSON = "steem:op:custom_json:drugwars"

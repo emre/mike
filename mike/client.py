@@ -1,6 +1,8 @@
 import asyncio
 
 from discord.ext import commands
+import time
+
 from steem import Steem
 
 from .db import Database
@@ -28,3 +30,7 @@ class CustomClient(commands.Bot):
     def steem_username_is_valid(self, username):
         resp = self.steem.get_accounts([username])
         return bool(len(resp))
+
+    @property
+    def running_on(self):
+        return list(self.servers)[0]
