@@ -20,28 +20,46 @@ class TxListener:
         self.battle_log_channel = os.getenv("MIKE_BATTLE_LOG_CHANNEL_ID")
 
     async def listen_ops(self):
-        sub = await aioredis.create_redis(
-            ('localhost', 6379))
-        reader_redis = await aioredis.create_redis(
-            ('localhost', 6379))
 
-        res = await sub.subscribe(MEESEEKER_SELECTOR_FOR_CUSTOM_JSON)
-        ch1 = res[0]
-        while await ch1.wait_message():
-            msg = await ch1.get_json()
+        # aioredis doesn't support both subscribing and getting the data
+        # in a one redis instance. so we create two instances.
+        subscriber_redis = await aioredis.create_redis(
+            (os.getenv("MIKE_REDIS_HOST"), os.getenv("MIKE_REDIS_PORT")))
+        reader_redis = await aioredis.create_redis(
+            (os.getenv("MIKE_REDIS_HOST"), os.getenv("MIKE_REDIS_PORT")))
+
+        res = await subscriber_redis.subscribe(
+            MEESEEKER_SELECTOR_FOR_CUSTOM_JSON)
+        channel = res[0]
+        while await channel.wait_message():
+            msg = await channel.get_json()
             data = await reader_redis.get(msg["key"])
-            op = json.loads(data)
+            try:
+                op = json.loads(data)
+            except Exception as error:
+                # malformed json, skip
+                return
+
             await self.handle_operation(
                 op["type"], op["value"], op["timestamp"])
 
     async def handle_operation(self, op_type, op_value, timestamp):
+        # we're only interested in custom jsons
         if op_type != "custom_json_operation":
             return
 
-        metadata = json.loads(op_value["json"])
+        # handle malformed json data
+        try:
+            metadata = json.loads(op_value["json"])
+        except Exception as error:
+            return
+
+        # we're only interested in fights.
         if metadata.get("type") != "fight":
             return
 
+        # if battle_log is enabled,
+        # bot puts all battle stream into a specific channel.
         if self.battle_log_channel:
             channel = self.bot.running_on.get_channel(
                 self.battle_log_channel)
@@ -50,6 +68,7 @@ class TxListener:
                     timestamp,
                 ))
 
+        # check subscriptions
         subscriptions = self.db.all_subscriptions()
         for subscription in subscriptions:
             if subscription["player_account"] == metadata["payload"]["target"]:
