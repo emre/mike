@@ -11,7 +11,7 @@ setup(
     description='A discord bot to notify battles',
     entry_points={
         'console_scripts': [
-            'mike = mike.main:main',
+            'mike = mike.bot:main',
         ],
     },
     install_requires=["dataset", "discord.py", "aioredis"]
