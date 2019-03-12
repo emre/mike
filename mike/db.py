@@ -71,3 +71,13 @@ class Database:
         :param discord_account: Discord ID. (foo#N)
         """
         return list(self.subscriptions.find(discord_account=discord_account))
+
+    def subscriptions_by_player_account(self, player_account):
+        """Return all subscriptions of a player account.
+        :param player_account: Account name
+        """
+        return list(self.subscriptions.find(player_account=player_account))
+
+    def registered_targets(self):
+        targets = list(self.subscriptions.find())
+        return [t["player_account"] for t in targets]

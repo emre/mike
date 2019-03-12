@@ -69,12 +69,16 @@ class TxListener:
                 ))
 
         # check subscriptions
-        subscriptions = self.db.all_subscriptions()
+        if not metadata["payload"]["target"] in self.db.registered_targets():
+            return
+
+        subscriptions = self.db.subscriptions_by_player_account(
+            metadata["payload"]["target"])
         for subscription in subscriptions:
             if subscription["player_account"] == metadata["payload"]["target"]:
                 member = self.bot.running_on.get_member(
                     subscription["discord_backend_id"])
-                await self.bot.send_message(member, embed=battle_alert(
+                r = await self.bot.send_message(member, embed=battle_alert(
                     metadata,
                     timestamp,
                 ))
