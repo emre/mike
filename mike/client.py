@@ -1,8 +1,6 @@
 import asyncio
 
 from discord.ext import commands
-import time
-
 from steem import Steem
 
 from .db import Database

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='drugwars_mike',
-    version='0.0.9',
+    version='0.1.1',
     packages=find_packages(),
     url='http://github.com/emre/mike',
     license='MIT',
@@ -14,5 +14,5 @@ setup(
             'mike = mike.bot:main',
         ],
     },
-    install_requires=["dataset", "discord.py", "aioredis"]
+    install_requires=["dataset", "discord.py", "aioredis", "steem"]
 )
