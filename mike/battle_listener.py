@@ -1,15 +1,11 @@
-import logging
-import time
-import os
 import json
-from .embeds import battle_alert
-from dateutil.parser import parse
-import aioredis
-import asyncio
-import discord
-import aioredis
-from .constants import MEESEEKER_SELECTOR_FOR_CUSTOM_JSON
+import logging
+import os
 
+import aioredis
+
+from .constants import MEESEEKER_SELECTOR_FOR_CUSTOM_JSON
+from .embeds import battle_alert
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -33,10 +29,8 @@ class TxListener:
         ch1 = res[0]
         while await ch1.wait_message():
             msg = await ch1.get_json()
-            print(msg)
             data = await reader_redis.get(msg["key"])
             op = json.loads(data)
-            print(op)
             await self.handle_operation(
                 op["type"], op["value"], op["timestamp"])
 
@@ -61,7 +55,7 @@ class TxListener:
             if subscription["player_account"] == metadata["payload"]["target"]:
                 member = self.bot.running_on.get_member(
                     subscription["discord_backend_id"])
-                r = await self.bot.send_message(member, battle_alert(
+                await self.bot.send_message(member, embed=battle_alert(
                     metadata,
                     timestamp,
                 ))
