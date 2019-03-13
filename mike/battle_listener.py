@@ -102,6 +102,8 @@ class TxListener:
                 continue
             member = self.bot.running_on.get_member(
                 subscription["discord_backend_id"])
+            if not member:
+                continue
             print("Sending notification to", subscription["discord_account"])
             await self.bot.send_message(member, embed=battle_alert(
                 metadata,
