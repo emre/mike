@@ -1,8 +1,10 @@
 import json
 import logging
 import os
+from urllib.parse import urlparse
 
 import aioredis
+import aiomysql
 
 from .constants import MEESEEKER_SELECTOR_FOR_CUSTOM_JSON
 from .embeds import battle_alert
@@ -18,6 +20,27 @@ class TxListener:
         self.db = db
         self.bot = bot
         self.battle_log_channel = os.getenv("MIKE_BATTLE_LOG_CHANNEL_ID")
+
+    async def get_connection(self):
+        p = urlparse(os.getenv("MIKE_DB"))
+        path = p.path[1:]
+        connection = await aiomysql.connect(
+            host=p.hostname,
+            port=p.port,
+            user=p.username,
+            password=p.password,
+            db=path,
+        )
+        return connection
+
+    async def get_subscriptions(self, player_account):
+        conn = await self.get_connection()
+        async with conn.cursor(aiomysql.DictCursor) as cur:
+            await cur.execute(
+                "SELECT * FROM subscriptions where player_account = %s",
+                player_account)
+            r = await cur.fetchall()
+            return r
 
     async def listen_ops(self):
 
@@ -68,13 +91,18 @@ class TxListener:
                     timestamp,
                 ))
 
-        subscriptions = self.db.subscriptions_by_player_account(
+        subscriptions = await self.get_subscriptions(
             metadata["payload"]["target"])
+
+        if len(subscriptions) == 0:
+            return
+
         for subscription in subscriptions:
             if subscription["player_account"] != metadata["payload"]["target"]:
                 continue
             member = self.bot.running_on.get_member(
                 subscription["discord_backend_id"])
+            print("Sending notification to", subscription["discord_account"])
             await self.bot.send_message(member, embed=battle_alert(
                 metadata,
                 timestamp,
