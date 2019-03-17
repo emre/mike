@@ -6,6 +6,8 @@ from .embeds import get_help, subscription_list_embed
 from .battle_listener import TxListener
 from .db import Database
 
+import asyncio
+
 
 def main():
     # init the modified Discord client
@@ -90,11 +92,15 @@ def main():
         """
         await bot.wait_until_ready()
         while not bot.is_closed:
-            tx_listener = TxListener(
-                db=Database(),
-                bot=bot,
-            )
-            await tx_listener.listen_ops()
+            try:
+                tx_listener = TxListener(
+                    db=Database(),
+                    bot=bot,
+                )
+                await tx_listener.listen_ops()
+            except Exception as error:
+                print(error)
+                asyncio.sleep(1)
 
     # shoot!
     bot.loop.create_task(listen_battles())
